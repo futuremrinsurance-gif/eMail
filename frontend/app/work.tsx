@@ -5,13 +5,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
-  TextInput,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useEmailStore, Email } from '../src/store/emailStore';
+import SwipeableEmailItem from '../src/components/SwipeableEmailItem';
 
 export default function WorkEmailScreen() {
   const router = useRouter();
@@ -21,9 +21,9 @@ export default function WorkEmailScreen() {
     accounts,
     getCurrentTheme,
     appSettings,
-    markAsRead,
     toggleEmailRead,
     deleteEmail,
+    archiveEmail,
     emails,
   } = useEmailStore();
 
@@ -109,6 +109,25 @@ export default function WorkEmailScreen() {
     setIsSelectionMode(false);
   };
 
+  const archiveSelectedEmails = () => {
+    selectedIds.forEach(id => {
+      archiveEmail(id);
+    });
+    setSelectedIds([]);
+    setIsSelectionMode(false);
+  };
+
+  const flagSelectedEmails = () => {
+    selectedIds.forEach(id => {
+      const email = emails.find(e => e.id === id);
+      if (email && !email.isFlagged) {
+        toggleEmailFlag(id);
+      }
+    });
+    setSelectedIds([]);
+    setIsSelectionMode(false);
+  };
+
   const handleEmailPress = (item: Email) => {
     if (isSelectionMode) {
       toggleEmailSelection(item.id);
@@ -124,64 +143,22 @@ export default function WorkEmailScreen() {
     }
   };
 
-  const renderEmail = ({ item }: { item: Email }) => {
-    const isSelected = selectedIds.includes(item.id);
-    
-    return (
-      <TouchableOpacity
-        style={[styles.emailItem, isSelected && styles.emailItemSelected]}
-        onPress={() => handleEmailPress(item)}
-        onLongPress={() => handleEmailLongPress(item)}
-        activeOpacity={0.7}
-      >
-        {isSelectionMode && (
-          <TouchableOpacity
-            style={styles.checkboxContainer}
-            onPress={() => toggleEmailSelection(item.id)}
-          >
-            <View style={[styles.checkbox, isSelected && styles.checkboxChecked]}>
-              {isSelected && <Ionicons name="checkmark" size={16} color="#fff" />}
-            </View>
-          </TouchableOpacity>
-        )}
-        <View style={styles.emailContent}>
-          <View style={styles.emailHeader}>
-            <Text style={[styles.sender, !item.isRead && styles.unread]} numberOfLines={1}>
-              {item.fromName}
-            </Text>
-            <View style={styles.dateRow}>
-              {item.hasAttachments && (
-                <Ionicons name="attach" size={14} color={theme.textSecondary} style={styles.attachIcon} />
-              )}
-              <Text style={styles.date}>{item.date}</Text>
-            </View>
-          </View>
-          <View style={styles.subjectRow}>
-            {!item.isRead && <View style={[styles.unreadDot, { backgroundColor: theme.primary }]} />}
-            <Text style={[styles.subject, !item.isRead && styles.unread]} numberOfLines={1}>
-              {item.subject}
-            </Text>
-          </View>
-          <Text style={styles.snippet} numberOfLines={2}>
-            {item.snippet}
-          </Text>
-        </View>
-        {!isSelectionMode && (
-          <TouchableOpacity
-            style={styles.flagBtn}
-            onPress={() => toggleEmailFlag(item.id)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons
-              name={item.isFlagged ? 'flag' : 'flag-outline'}
-              size={18}
-              color={item.isFlagged ? '#FF9500' : theme.textSecondary}
-            />
-          </TouchableOpacity>
-        )}
-      </TouchableOpacity>
-    );
-  };
+  const renderEmail = ({ item }: { item: Email }) => (
+    <SwipeableEmailItem
+      item={item}
+      theme={theme}
+      isSelected={selectedIds.includes(item.id)}
+      isSelectionMode={isSelectionMode}
+      accountColor={workAccount?.color || '#0078D4'}
+      onPress={() => handleEmailPress(item)}
+      onLongPress={() => handleEmailLongPress(item)}
+      onToggleSelection={() => toggleEmailSelection(item.id)}
+      onToggleFlag={() => toggleEmailFlag(item.id)}
+      onDelete={() => deleteEmail(item.id)}
+      onArchive={() => archiveEmail(item.id)}
+      onToggleRead={() => toggleEmailRead(item.id)}
+    />
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -202,7 +179,7 @@ export default function WorkEmailScreen() {
                 color={theme.primary}
               />
               <Text style={[styles.selectAllText, { color: theme.primary }]}>
-                {allSelected ? 'Deselect' : 'Select All'}
+                {allSelected ? 'Deselect' : 'All'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -230,7 +207,7 @@ export default function WorkEmailScreen() {
         )}
       </View>
 
-      {/* Selection Action Bar */}
+      {/* Selection Action Bar - Enhanced */}
       {isSelectionMode && someSelected && (
         <View style={styles.actionBar}>
           <TouchableOpacity 
@@ -239,15 +216,23 @@ export default function WorkEmailScreen() {
           >
             <Ionicons
               name={hasUnreadSelected ? 'mail-open-outline' : 'mail-outline'}
-              size={22}
+              size={20}
               color={theme.primary}
             />
             <Text style={[styles.actionText, { color: theme.primary }]}>
-              {hasUnreadSelected ? 'Mark Read' : 'Mark Unread'}
+              {hasUnreadSelected ? 'Read' : 'Unread'}
             </Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.actionItem} onPress={flagSelectedEmails}>
+            <Ionicons name="flag-outline" size={20} color="#FF9500" />
+            <Text style={[styles.actionText, { color: '#FF9500' }]}>Flag</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionItem} onPress={archiveSelectedEmails}>
+            <Ionicons name="archive-outline" size={20} color="#34C759" />
+            <Text style={[styles.actionText, { color: '#34C759' }]}>Archive</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.actionItem} onPress={deleteSelectedEmails}>
-            <Ionicons name="trash-outline" size={22} color="#FF3B30" />
+            <Ionicons name="trash-outline" size={20} color="#FF3B30" />
             <Text style={[styles.actionText, { color: '#FF3B30' }]}>Delete</Text>
           </TouchableOpacity>
         </View>
@@ -306,6 +291,15 @@ export default function WorkEmailScreen() {
             <Text style={styles.statNumber}>{workEmails.filter(e => e.isFlagged).length}</Text>
             <Text style={styles.statLabel}>Flagged</Text>
           </View>
+        </View>
+      )}
+
+      {/* Swipe hint */}
+      {!isSelectionMode && workEmails.length > 0 && (
+        <View style={styles.hintBar}>
+          <Text style={styles.hintText}>
+            <Ionicons name="swap-horizontal" size={12} color={theme.textSecondary} /> Swipe for quick actions
+          </Text>
         </View>
       )}
 
@@ -419,15 +413,14 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderBottomColor: theme.border,
   },
   actionItem: {
-    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
   },
   actionText: {
-    fontSize: 15,
-    marginLeft: 6,
-    fontWeight: '500',
+    fontSize: 11,
+    marginTop: 2,
+    fontWeight: '600',
   },
   statsBar: {
     flexDirection: 'row',
@@ -453,6 +446,16 @@ const createStyles = (theme: any) => StyleSheet.create({
   statDivider: {
     width: 1,
     backgroundColor: theme.border,
+  },
+  hintBar: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: theme.background,
+  },
+  hintText: {
+    fontSize: 12,
+    color: theme.textSecondary,
+    textAlign: 'center',
   },
   subjectPickerOverlay: {
     position: 'absolute',
@@ -510,89 +513,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   listContent: {
     flexGrow: 1,
-  },
-  emailItem: {
-    flexDirection: 'row',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
-    backgroundColor: theme.surface,
-  },
-  emailItemSelected: {
-    backgroundColor: theme.isDark ? '#1a3a5c' : '#E3EFFF',
-  },
-  checkboxContainer: {
-    justifyContent: 'center',
-    paddingRight: 12,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: theme.textSecondary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: theme.primary,
-    borderColor: theme.primary,
-  },
-  emailContent: {
-    flex: 1,
-  },
-  emailHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  sender: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.text,
-    flex: 1,
-  },
-  unread: {
-    fontWeight: '700',
-  },
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  attachIcon: {
-    marginRight: 4,
-  },
-  date: {
-    fontSize: 14,
-    color: theme.textSecondary,
-  },
-  subjectRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  subject: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: theme.text,
-    flex: 1,
-  },
-  snippet: {
-    fontSize: 14,
-    color: theme.textSecondary,
-    lineHeight: 20,
-  },
-  flagBtn: {
-    justifyContent: 'center',
-    paddingLeft: 12,
   },
   emptyContainer: {
     flex: 1,

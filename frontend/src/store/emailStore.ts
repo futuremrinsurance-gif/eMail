@@ -182,6 +182,13 @@ interface EmailState {
   markSelectedAsUnread: () => void;
   deleteSelectedEmails: () => void;
   flagSelectedEmails: () => void;
+  archiveSelectedEmails: () => void;
+  
+  // Single email actions
+  archiveEmail: (id: string) => void;
+  
+  // Conversation/Thread helpers
+  getConversations: () => { threadId: string; subject: string; emails: Email[]; latestDate: string; }[];
 }
 
 // Demo accounts including custom domain
@@ -578,6 +585,60 @@ export const useEmailStore = create<EmailState>((set, get) => ({
     selectedEmailIds: [],
     isSelectionMode: false,
   })),
+
+  archiveSelectedEmails: () => set((state) => ({
+    emails: state.emails.map((e) =>
+      state.selectedEmailIds.includes(e.id) ? { ...e, folderId: 'archive' } : e
+    ),
+    selectedEmailIds: [],
+    isSelectionMode: false,
+  })),
+
+  archiveEmail: (id) => set((state) => ({
+    emails: state.emails.map((e) =>
+      e.id === id ? { ...e, folderId: 'archive' } : e
+    ),
+  })),
+
+  getConversations: () => {
+    const state = get();
+    const enabledAccountIds = state.accounts.filter(a => a.isEnabled).map(a => a.id);
+    
+    // Get inbox emails
+    const inboxEmails = state.emails.filter(
+      (e) => e.folderId === 'inbox' && enabledAccountIds.includes(e.accountId)
+    );
+
+    // Group by subject (removing Re: and Fwd: prefixes)
+    const threadMap = new Map<string, Email[]>();
+    
+    inboxEmails.forEach((email) => {
+      const cleanSubject = email.subject
+        .replace(/^(Re:|Fwd:|RE:|FWD:)\s*/gi, '')
+        .trim()
+        .toLowerCase();
+      
+      if (!threadMap.has(cleanSubject)) {
+        threadMap.set(cleanSubject, []);
+      }
+      threadMap.get(cleanSubject)!.push(email);
+    });
+
+    // Convert to array and sort by latest date
+    const conversations = Array.from(threadMap.entries()).map(([subject, emails]) => {
+      const sorted = emails.sort((a, b) => b.timestamp - a.timestamp);
+      return {
+        threadId: subject,
+        subject: sorted[0].subject,
+        emails: sorted,
+        latestDate: sorted[0].date,
+      };
+    });
+
+    return conversations.sort((a, b) => 
+      b.emails[0].timestamp - a.emails[0].timestamp
+    );
+  },
 
   getFilteredEmails: () => {
     const state = get();

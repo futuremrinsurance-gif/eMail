@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useEmailStore, Email } from '../src/store/emailStore';
+import SwipeableEmailItem from '../src/components/SwipeableEmailItem';
 
 export default function AllInboxScreen() {
   const router = useRouter();
@@ -21,12 +22,16 @@ export default function AllInboxScreen() {
     searchQuery,
     setSearchQuery,
     getFilteredEmails,
+    getConversations,
     toggleEmailFlag,
     accounts,
     smartCategories,
     selectedCategoryId,
     setSelectedCategory,
     getCurrentTheme,
+    deleteEmail,
+    archiveEmail,
+    toggleEmailRead,
     // Selection state
     isSelectionMode,
     selectedEmailIds,
@@ -37,16 +42,24 @@ export default function AllInboxScreen() {
     markSelectedAsRead,
     markSelectedAsUnread,
     deleteSelectedEmails,
+    flagSelectedEmails,
+    archiveSelectedEmails,
   } = useEmailStore();
 
   const theme = getCurrentTheme();
   const emails = getFilteredEmails();
+  const conversations = getConversations();
   const currentFolder = folders.find((f) => f.id === selectedFolderId);
+
+  const [viewType, setViewType] = useState<'emails' | 'threads'>('emails');
 
   const allSelected = emails.length > 0 && selectedEmailIds.length === emails.length;
   const someSelected = selectedEmailIds.length > 0;
   const hasUnreadSelected = emails.some(
     (e) => selectedEmailIds.includes(e.id) && !e.isRead
+  );
+  const hasFlaggedSelected = emails.some(
+    (e) => selectedEmailIds.includes(e.id) && e.isFlagged
   );
 
   const unreadCount = emails.filter(e => !e.isRead).length;
@@ -88,69 +101,64 @@ export default function AllInboxScreen() {
 
   const styles = createStyles(theme);
 
-  const renderEmail = ({ item }: { item: Email }) => {
-    const isSelected = selectedEmailIds.includes(item.id);
+  const renderEmail = ({ item }: { item: Email }) => (
+    <SwipeableEmailItem
+      item={item}
+      theme={theme}
+      isSelected={selectedEmailIds.includes(item.id)}
+      isSelectionMode={isSelectionMode}
+      accountColor={getAccountColor(item.accountId)}
+      onPress={() => handleEmailPress(item)}
+      onLongPress={() => handleEmailLongPress(item)}
+      onToggleSelection={() => toggleEmailSelection(item.id)}
+      onToggleFlag={() => toggleEmailFlag(item.id)}
+      onDelete={() => deleteEmail(item.id)}
+      onArchive={() => archiveEmail(item.id)}
+      onToggleRead={() => toggleEmailRead(item.id)}
+    />
+  );
+
+  const renderThread = ({ item }: { item: { threadId: string; subject: string; emails: Email[]; latestDate: string } }) => {
+    const latestEmail = item.emails[0];
+    const threadUnread = item.emails.some(e => !e.isRead);
+    const threadFlagged = item.emails.some(e => e.isFlagged);
 
     return (
       <TouchableOpacity
-        style={[styles.emailItem, isSelected && styles.emailItemSelected]}
-        onPress={() => handleEmailPress(item)}
-        onLongPress={() => handleEmailLongPress(item)}
+        style={styles.threadItem}
+        onPress={() => router.push(`/email/${latestEmail.id}`)}
         activeOpacity={0.7}
       >
-        {isSelectionMode && (
-          <TouchableOpacity
-            style={styles.checkboxContainer}
-            onPress={() => toggleEmailSelection(item.id)}
-          >
-            <View style={[styles.checkbox, isSelected && styles.checkboxChecked]}>
-              {isSelected && <Ionicons name="checkmark" size={16} color="#fff" />}
-            </View>
-          </TouchableOpacity>
-        )}
-        <View style={styles.emailContent}>
-          <View style={styles.emailHeader}>
-            <View style={styles.senderRow}>
-              <View
-                style={[
-                  styles.accountIndicator,
-                  { backgroundColor: getAccountColor(item.accountId) },
-                ]}
-              />
-              <Text style={[styles.sender, !item.isRead && styles.unread]} numberOfLines={1}>
-                {item.fromName}
+        <View style={styles.threadContent}>
+          <View style={styles.threadHeader}>
+            <View style={styles.threadSenderRow}>
+              {threadUnread && <View style={[styles.unreadDot, { backgroundColor: theme.primary }]} />}
+              <Text style={[styles.threadSender, threadUnread && styles.unread]} numberOfLines={1}>
+                {item.emails.length > 1 
+                  ? `${latestEmail.fromName} (${item.emails.length})`
+                  : latestEmail.fromName
+                }
               </Text>
             </View>
-            <View style={styles.dateRow}>
-              {item.hasAttachments && (
-                <Ionicons name="attach" size={14} color={theme.textSecondary} style={styles.attachIcon} />
-              )}
-              <Text style={styles.date}>{item.date}</Text>
-            </View>
+            <Text style={styles.threadDate}>{item.latestDate}</Text>
           </View>
-          <View style={styles.subjectRow}>
-            {!item.isRead && <View style={[styles.unreadDot, { backgroundColor: theme.primary }]} />}
-            <Text style={[styles.subject, !item.isRead && styles.unread]} numberOfLines={1}>
-              {item.subject}
-            </Text>
-          </View>
-          <Text style={styles.snippet} numberOfLines={2}>
-            {item.snippet}
+          <Text style={[styles.threadSubject, threadUnread && styles.unread]} numberOfLines={1}>
+            {item.subject}
+          </Text>
+          <Text style={styles.threadSnippet} numberOfLines={1}>
+            {latestEmail.snippet}
           </Text>
         </View>
-        {!isSelectionMode && (
-          <TouchableOpacity
-            style={styles.flagBtn}
-            onPress={() => toggleEmailFlag(item.id)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons
-              name={item.isFlagged ? 'flag' : 'flag-outline'}
-              size={18}
-              color={item.isFlagged ? '#FF9500' : theme.textSecondary}
-            />
-          </TouchableOpacity>
-        )}
+        <View style={styles.threadActions}>
+          {item.emails.length > 1 && (
+            <View style={styles.threadBadge}>
+              <Text style={styles.threadBadgeText}>{item.emails.length}</Text>
+            </View>
+          )}
+          {threadFlagged && (
+            <Ionicons name="flag" size={16} color="#FF9500" />
+          )}
+        </View>
       </TouchableOpacity>
     );
   };
@@ -174,7 +182,7 @@ export default function AllInboxScreen() {
                 color={theme.primary}
               />
               <Text style={[styles.selectAllText, { color: theme.primary }]}>
-                {allSelected ? 'Deselect' : 'Select All'}
+                {allSelected ? 'Deselect' : 'All'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -200,28 +208,62 @@ export default function AllInboxScreen() {
           </View>
         )}
 
-        {/* Filter pills */}
-        <View style={styles.filterRow}>
-          {smartCategories.map((cat) => (
+        {/* View Type Toggle */}
+        {!isSelectionMode && (
+          <View style={styles.viewToggle}>
             <TouchableOpacity
-              key={cat.id}
-              style={[
-                styles.filterPill,
-                selectedCategoryId === cat.id && { backgroundColor: theme.primary },
-              ]}
-              onPress={() => setSelectedCategory(cat.id)}
+              style={[styles.viewToggleBtn, viewType === 'emails' && styles.viewToggleBtnActive]}
+              onPress={() => setViewType('emails')}
             >
-              <Text
-                style={[
-                  styles.filterPillText,
-                  selectedCategoryId === cat.id && { color: '#fff' },
-                ]}
-              >
-                {cat.name}
+              <Ionicons 
+                name="mail-outline" 
+                size={16} 
+                color={viewType === 'emails' ? '#fff' : theme.textSecondary} 
+              />
+              <Text style={[styles.viewToggleText, viewType === 'emails' && styles.viewToggleTextActive]}>
+                Emails
               </Text>
             </TouchableOpacity>
-          ))}
-        </View>
+            <TouchableOpacity
+              style={[styles.viewToggleBtn, viewType === 'threads' && styles.viewToggleBtnActive]}
+              onPress={() => setViewType('threads')}
+            >
+              <Ionicons 
+                name="chatbubbles-outline" 
+                size={16} 
+                color={viewType === 'threads' ? '#fff' : theme.textSecondary} 
+              />
+              <Text style={[styles.viewToggleText, viewType === 'threads' && styles.viewToggleTextActive]}>
+                Threads
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Filter pills */}
+        {!isSelectionMode && (
+          <View style={styles.filterRow}>
+            {smartCategories.map((cat) => (
+              <TouchableOpacity
+                key={cat.id}
+                style={[
+                  styles.filterPill,
+                  selectedCategoryId === cat.id && { backgroundColor: theme.primary },
+                ]}
+                onPress={() => setSelectedCategory(cat.id)}
+              >
+                <Text
+                  style={[
+                    styles.filterPillText,
+                    selectedCategoryId === cat.id && { color: '#fff' },
+                  ]}
+                >
+                  {cat.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
@@ -241,51 +283,89 @@ export default function AllInboxScreen() {
         </View>
       </View>
 
-      {/* Selection Action Bar */}
+      {/* Selection Action Bar - Enhanced with more actions */}
       {isSelectionMode && someSelected && (
         <View style={styles.actionBar}>
           <TouchableOpacity style={styles.actionItem} onPress={handleMarkAsRead}>
             <Ionicons
               name={hasUnreadSelected ? 'mail-open-outline' : 'mail-outline'}
-              size={22}
+              size={20}
               color={theme.primary}
             />
             <Text style={[styles.actionText, { color: theme.primary }]}>
-              {hasUnreadSelected ? 'Mark Read' : 'Mark Unread'}
+              {hasUnreadSelected ? 'Read' : 'Unread'}
             </Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.actionItem} onPress={flagSelectedEmails}>
+            <Ionicons
+              name="flag-outline"
+              size={20}
+              color="#FF9500"
+            />
+            <Text style={[styles.actionText, { color: '#FF9500' }]}>Flag</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionItem} onPress={archiveSelectedEmails}>
+            <Ionicons name="archive-outline" size={20} color="#34C759" />
+            <Text style={[styles.actionText, { color: '#34C759' }]}>Archive</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.actionItem} onPress={deleteSelectedEmails}>
-            <Ionicons name="trash-outline" size={22} color="#FF3B30" />
+            <Ionicons name="trash-outline" size={20} color="#FF3B30" />
             <Text style={[styles.actionText, { color: '#FF3B30' }]}>Delete</Text>
           </TouchableOpacity>
         </View>
       )}
 
       {/* Email count */}
-      <View style={styles.countBar}>
-        <Text style={styles.countText}>
-          {emails.length} messages{unreadCount > 0 ? ` · ${unreadCount} unread` : ''}
-        </Text>
-      </View>
+      {!isSelectionMode && (
+        <View style={styles.countBar}>
+          <Text style={styles.countText}>
+            {viewType === 'threads' 
+              ? `${conversations.length} conversations`
+              : `${emails.length} messages${unreadCount > 0 ? ` · ${unreadCount} unread` : ''}`
+            }
+          </Text>
+          <Text style={styles.swipeHint}>
+            <Ionicons name="swap-horizontal" size={12} color={theme.textSecondary} /> Swipe for actions
+          </Text>
+        </View>
+      )}
 
-      {/* Email List */}
-      <FlatList
-        data={emails}
-        renderItem={renderEmail}
-        keyExtractor={(item) => item.id}
-        style={styles.list}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="mail-open-outline" size={64} color={theme.textSecondary} />
-            <Text style={styles.emptyText}>No emails</Text>
-            <Text style={styles.emptySubtext}>
-              {searchQuery ? 'Try a different search' : 'Your inbox is empty'}
-            </Text>
-          </View>
-        }
-      />
+      {/* Email/Thread List */}
+      {viewType === 'emails' ? (
+        <FlatList
+          data={emails}
+          renderItem={renderEmail}
+          keyExtractor={(item) => item.id}
+          style={styles.list}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="mail-open-outline" size={64} color={theme.textSecondary} />
+              <Text style={styles.emptyText}>No emails</Text>
+              <Text style={styles.emptySubtext}>
+                {searchQuery ? 'Try a different search' : 'Your inbox is empty'}
+              </Text>
+            </View>
+          }
+        />
+      ) : (
+        <FlatList
+          data={conversations}
+          renderItem={renderThread}
+          keyExtractor={(item) => item.threadId}
+          style={styles.list}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="chatbubbles-outline" size={64} color={theme.textSecondary} />
+              <Text style={styles.emptyText}>No conversations</Text>
+              <Text style={styles.emptySubtext}>Start a new conversation</Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -364,6 +444,34 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginLeft: 6,
     fontWeight: '500',
   },
+  // View toggle
+  viewToggle: {
+    flexDirection: 'row',
+    backgroundColor: theme.border,
+    borderRadius: 10,
+    padding: 3,
+    marginBottom: 12,
+  },
+  viewToggleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 6,
+  },
+  viewToggleBtnActive: {
+    backgroundColor: theme.primary,
+  },
+  viewToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.textSecondary,
+  },
+  viewToggleTextActive: {
+    color: '#fff',
+  },
   filterRow: {
     flexDirection: 'row',
     marginBottom: 12,
@@ -390,15 +498,14 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderBottomColor: theme.border,
   },
   actionItem: {
-    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
   },
   actionText: {
-    fontSize: 15,
-    marginLeft: 6,
-    fontWeight: '500',
+    fontSize: 11,
+    marginTop: 2,
+    fontWeight: '600',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -417,6 +524,9 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.text,
   },
   countBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 8,
     backgroundColor: theme.background,
@@ -425,13 +535,18 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 13,
     color: theme.textSecondary,
   },
+  swipeHint: {
+    fontSize: 11,
+    color: theme.textSecondary,
+  },
   list: {
     flex: 1,
   },
   listContent: {
     flexGrow: 1,
   },
-  emailItem: {
+  // Thread styles
+  threadItem: {
     flexDirection: 'row',
     paddingVertical: 14,
     paddingHorizontal: 16,
@@ -439,70 +554,56 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderBottomColor: theme.border,
     backgroundColor: theme.surface,
   },
-  emailItemSelected: {
-    backgroundColor: theme.isDark ? '#1a3a5c' : '#E3EFFF',
-  },
-  checkboxContainer: {
-    justifyContent: 'center',
-    paddingRight: 12,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: theme.textSecondary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: theme.primary,
-    borderColor: theme.primary,
-  },
-  emailContent: {
+  threadContent: {
     flex: 1,
   },
-  emailHeader: {
+  threadHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 4,
   },
-  senderRow: {
+  threadSenderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-  accountIndicator: {
-    width: 4,
-    height: 16,
-    borderRadius: 2,
-    marginRight: 8,
-  },
-  sender: {
+  threadSender: {
     fontSize: 16,
     fontWeight: '600',
     color: theme.text,
     flex: 1,
   },
-  unread: {
-    fontWeight: '700',
-  },
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  attachIcon: {
-    marginRight: 4,
-  },
-  date: {
+  threadDate: {
     fontSize: 14,
     color: theme.textSecondary,
   },
-  subjectRow: {
+  threadSubject: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: theme.text,
+    marginBottom: 4,
+  },
+  threadSnippet: {
+    fontSize: 14,
+    color: theme.textSecondary,
+  },
+  threadActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    gap: 8,
+    paddingLeft: 12,
+  },
+  threadBadge: {
+    backgroundColor: theme.primary,
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  threadBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#fff',
   },
   unreadDot: {
     width: 8,
@@ -510,20 +611,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderRadius: 4,
     marginRight: 8,
   },
-  subject: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: theme.text,
-    flex: 1,
-  },
-  snippet: {
-    fontSize: 14,
-    color: theme.textSecondary,
-    lineHeight: 20,
-  },
-  flagBtn: {
-    justifyContent: 'center',
-    paddingLeft: 12,
+  unread: {
+    fontWeight: '700',
   },
   emptyContainer: {
     flex: 1,
