@@ -24,7 +24,8 @@ export default function ComposeScreen() {
     accountId?: string;
   }>();
 
-  const { accounts, sendEmail } = useEmailStore();
+  const { accounts, sendEmail, getCurrentTheme } = useEmailStore();
+  const theme = getCurrentTheme();
 
   const [selectedAccountId, setSelectedAccountId] = useState(
     params.accountId || accounts[0]?.id || ''
@@ -37,6 +38,7 @@ export default function ComposeScreen() {
   const [showAccountPicker, setShowAccountPicker] = useState(false);
 
   const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
+  const styles = createStyles(theme);
 
   const handleSend = () => {
     if (!to.trim()) {
@@ -76,12 +78,12 @@ export default function ComposeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleDiscard} style={styles.headerBtn}>
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={[styles.cancelText, { color: theme.primary }]}>Cancel</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>New Message</Text>
           <TouchableOpacity
             onPress={handleSend}
-            style={[styles.headerBtn, styles.sendBtn]}
+            style={[styles.sendBtn, { backgroundColor: theme.primary }]}
           >
             <Ionicons name="send" size={20} color="#fff" />
           </TouchableOpacity>
@@ -98,19 +100,19 @@ export default function ComposeScreen() {
               <View
                 style={[
                   styles.accountDot,
-                  { backgroundColor: selectedAccount?.color || '#007AFF' },
+                  { backgroundColor: selectedAccount?.color || theme.primary },
                 ]}
               />
               <Text style={styles.accountEmail} numberOfLines={1}>
                 {selectedAccount?.email || 'Select account'}
               </Text>
-              <Ionicons name="chevron-down" size={18} color="#8E8E93" />
+              <Ionicons name="chevron-down" size={18} color={theme.textSecondary} />
             </View>
           </TouchableOpacity>
 
           {showAccountPicker && (
             <View style={styles.accountPickerContainer}>
-              {accounts.map((acc) => (
+              {accounts.filter(a => a.isEnabled).map((acc) => (
                 <TouchableOpacity
                   key={acc.id}
                   style={[
@@ -133,7 +135,7 @@ export default function ComposeScreen() {
                     <Text style={styles.accountOptionEmail}>{acc.email}</Text>
                   </View>
                   {acc.id === selectedAccountId && (
-                    <Ionicons name="checkmark" size={20} color="#007AFF" />
+                    <Ionicons name="checkmark" size={20} color={theme.primary} />
                   )}
                 </TouchableOpacity>
               ))}
@@ -148,14 +150,14 @@ export default function ComposeScreen() {
               value={to}
               onChangeText={setTo}
               placeholder="recipient@example.com"
-              placeholderTextColor="#C7C7CC"
+              placeholderTextColor={theme.textSecondary}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
             />
             {!showCc && (
               <TouchableOpacity onPress={() => setShowCc(true)}>
-                <Text style={styles.ccToggle}>Cc/Bcc</Text>
+                <Text style={[styles.ccToggle, { color: theme.primary }]}>Cc/Bcc</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -169,7 +171,7 @@ export default function ComposeScreen() {
                 value={cc}
                 onChangeText={setCc}
                 placeholder="cc@example.com"
-                placeholderTextColor="#C7C7CC"
+                placeholderTextColor={theme.textSecondary}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -185,7 +187,7 @@ export default function ComposeScreen() {
               value={subject}
               onChangeText={setSubject}
               placeholder="Subject"
-              placeholderTextColor="#C7C7CC"
+              placeholderTextColor={theme.textSecondary}
             />
           </View>
 
@@ -196,7 +198,7 @@ export default function ComposeScreen() {
               value={body}
               onChangeText={setBody}
               placeholder="Compose your message..."
-              placeholderTextColor="#C7C7CC"
+              placeholderTextColor={theme.textSecondary}
               multiline
               textAlignVertical="top"
             />
@@ -206,13 +208,13 @@ export default function ComposeScreen() {
         {/* Bottom Toolbar */}
         <View style={styles.toolbar}>
           <TouchableOpacity style={styles.toolbarBtn}>
-            <Ionicons name="attach" size={24} color="#007AFF" />
+            <Ionicons name="attach" size={24} color={theme.primary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.toolbarBtn}>
-            <Ionicons name="image-outline" size={24} color="#007AFF" />
+            <Ionicons name="image-outline" size={24} color={theme.primary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.toolbarBtn}>
-            <Ionicons name="link" size={24} color="#007AFF" />
+            <Ionicons name="link" size={24} color={theme.primary} />
           </TouchableOpacity>
           <View style={styles.toolbarSpacer} />
         </View>
@@ -221,10 +223,10 @@ export default function ComposeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.surface,
   },
   keyboardView: {
     flex: 1,
@@ -236,7 +238,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: theme.border,
   },
   headerBtn: {
     padding: 8,
@@ -244,14 +246,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#000',
+    color: theme.text,
   },
   cancelText: {
     fontSize: 17,
-    color: '#007AFF',
   },
   sendBtn: {
-    backgroundColor: '#007AFF',
     borderRadius: 20,
     width: 40,
     height: 40,
@@ -267,21 +267,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F2F2F7',
+    borderBottomColor: theme.border,
   },
   fieldLabel: {
     fontSize: 16,
-    color: '#8E8E93',
+    color: theme.textSecondary,
     width: 70,
   },
   fieldInput: {
     flex: 1,
     fontSize: 16,
-    color: '#000',
+    color: theme.text,
   },
   ccToggle: {
     fontSize: 14,
-    color: '#007AFF',
     fontWeight: '500',
   },
   accountSelector: {
@@ -298,12 +297,12 @@ const styles = StyleSheet.create({
   accountEmail: {
     flex: 1,
     fontSize: 16,
-    color: '#000',
+    color: theme.text,
   },
   accountPickerContainer: {
-    backgroundColor: '#F9F9F9',
+    backgroundColor: theme.background,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: theme.border,
   },
   accountOption: {
     flexDirection: 'row',
@@ -311,10 +310,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F2F2F7',
+    borderBottomColor: theme.border,
   },
   accountOptionSelected: {
-    backgroundColor: '#E3EFFF',
+    backgroundColor: theme.isDark ? '#1a3a5c' : '#E3EFFF',
   },
   accountOptionInfo: {
     flex: 1,
@@ -323,11 +322,11 @@ const styles = StyleSheet.create({
   accountOptionName: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#000',
+    color: theme.text,
   },
   accountOptionEmail: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: theme.textSecondary,
     marginTop: 2,
   },
   bodyContainer: {
@@ -337,7 +336,7 @@ const styles = StyleSheet.create({
   bodyInput: {
     flex: 1,
     fontSize: 16,
-    color: '#000',
+    color: theme.text,
     padding: 16,
     lineHeight: 24,
   },
@@ -347,8 +346,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E5E5EA',
-    backgroundColor: '#F9F9F9',
+    borderTopColor: theme.border,
+    backgroundColor: theme.background,
     paddingBottom: Platform.OS === 'ios' ? 30 : 12,
   },
   toolbarBtn: {

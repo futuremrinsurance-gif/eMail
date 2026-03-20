@@ -10,6 +10,7 @@ export interface Account {
   provider: EmailProvider;
   isPrimary: boolean;
   color: string;
+  isEnabled: boolean;
 }
 
 export interface Email {
@@ -35,6 +36,7 @@ export interface Folder {
   name: string;
   icon: string;
   isSystem: boolean;
+  isVisible: boolean;
   count?: number;
 }
 
@@ -44,6 +46,77 @@ export interface SmartCategory {
   icon: string;
   color: string;
 }
+
+export interface ColorTheme {
+  id: string;
+  name: string;
+  primary: string;
+  secondary: string;
+  accent: string;
+  background: string;
+  surface: string;
+  text: string;
+  textSecondary: string;
+  border: string;
+  isDark: boolean;
+}
+
+// 50 Color themes (25 light + 25 dark)
+export const colorThemes: ColorTheme[] = [
+  // Light themes
+  { id: 'light-default', name: 'Default Blue', primary: '#007AFF', secondary: '#5856D6', accent: '#FF9500', background: '#F5F5F7', surface: '#FFFFFF', text: '#000000', textSecondary: '#8E8E93', border: '#E5E5EA', isDark: false },
+  { id: 'light-ocean', name: 'Ocean', primary: '#0077B6', secondary: '#00B4D8', accent: '#90E0EF', background: '#F0F9FF', surface: '#FFFFFF', text: '#03045E', textSecondary: '#6B7280', border: '#CAF0F8', isDark: false },
+  { id: 'light-forest', name: 'Forest', primary: '#2D6A4F', secondary: '#40916C', accent: '#95D5B2', background: '#F0FDF4', surface: '#FFFFFF', text: '#1B4332', textSecondary: '#6B7280', border: '#D8F3DC', isDark: false },
+  { id: 'light-sunset', name: 'Sunset', primary: '#F97316', secondary: '#FB923C', accent: '#FED7AA', background: '#FFF7ED', surface: '#FFFFFF', text: '#9A3412', textSecondary: '#6B7280', border: '#FFEDD5', isDark: false },
+  { id: 'light-lavender', name: 'Lavender', primary: '#7C3AED', secondary: '#8B5CF6', accent: '#C4B5FD', background: '#FAF5FF', surface: '#FFFFFF', text: '#5B21B6', textSecondary: '#6B7280', border: '#EDE9FE', isDark: false },
+  { id: 'light-rose', name: 'Rose', primary: '#E11D48', secondary: '#FB7185', accent: '#FECDD3', background: '#FFF1F2', surface: '#FFFFFF', text: '#9F1239', textSecondary: '#6B7280', border: '#FFE4E6', isDark: false },
+  { id: 'light-mint', name: 'Mint', primary: '#059669', secondary: '#10B981', accent: '#A7F3D0', background: '#ECFDF5', surface: '#FFFFFF', text: '#065F46', textSecondary: '#6B7280', border: '#D1FAE5', isDark: false },
+  { id: 'light-sky', name: 'Sky', primary: '#0284C7', secondary: '#38BDF8', accent: '#BAE6FD', background: '#F0F9FF', surface: '#FFFFFF', text: '#075985', textSecondary: '#6B7280', border: '#E0F2FE', isDark: false },
+  { id: 'light-amber', name: 'Amber', primary: '#D97706', secondary: '#F59E0B', accent: '#FDE68A', background: '#FFFBEB', surface: '#FFFFFF', text: '#92400E', textSecondary: '#6B7280', border: '#FEF3C7', isDark: false },
+  { id: 'light-indigo', name: 'Indigo', primary: '#4F46E5', secondary: '#6366F1', accent: '#C7D2FE', background: '#EEF2FF', surface: '#FFFFFF', text: '#3730A3', textSecondary: '#6B7280', border: '#E0E7FF', isDark: false },
+  { id: 'light-teal', name: 'Teal', primary: '#0D9488', secondary: '#14B8A6', accent: '#99F6E4', background: '#F0FDFA', surface: '#FFFFFF', text: '#115E59', textSecondary: '#6B7280', border: '#CCFBF1', isDark: false },
+  { id: 'light-pink', name: 'Pink', primary: '#DB2777', secondary: '#EC4899', accent: '#FBCFE8', background: '#FDF2F8', surface: '#FFFFFF', text: '#9D174D', textSecondary: '#6B7280', border: '#FCE7F3', isDark: false },
+  { id: 'light-cyan', name: 'Cyan', primary: '#0891B2', secondary: '#06B6D4', accent: '#A5F3FC', background: '#ECFEFF', surface: '#FFFFFF', text: '#155E75', textSecondary: '#6B7280', border: '#CFFAFE', isDark: false },
+  { id: 'light-lime', name: 'Lime', primary: '#65A30D', secondary: '#84CC16', accent: '#D9F99D', background: '#F7FEE7', surface: '#FFFFFF', text: '#3F6212', textSecondary: '#6B7280', border: '#ECFCCB', isDark: false },
+  { id: 'light-fuchsia', name: 'Fuchsia', primary: '#C026D3', secondary: '#D946EF', accent: '#F5D0FE', background: '#FDF4FF', surface: '#FFFFFF', text: '#86198F', textSecondary: '#6B7280', border: '#FAE8FF', isDark: false },
+  { id: 'light-emerald', name: 'Emerald', primary: '#059669', secondary: '#10B981', accent: '#6EE7B7', background: '#ECFDF5', surface: '#FFFFFF', text: '#047857', textSecondary: '#6B7280', border: '#A7F3D0', isDark: false },
+  { id: 'light-violet', name: 'Violet', primary: '#7C3AED', secondary: '#8B5CF6', accent: '#DDD6FE', background: '#F5F3FF', surface: '#FFFFFF', text: '#6D28D9', textSecondary: '#6B7280', border: '#EDE9FE', isDark: false },
+  { id: 'light-coral', name: 'Coral', primary: '#EF4444', secondary: '#F87171', accent: '#FECACA', background: '#FEF2F2', surface: '#FFFFFF', text: '#DC2626', textSecondary: '#6B7280', border: '#FEE2E2', isDark: false },
+  { id: 'light-slate', name: 'Slate', primary: '#475569', secondary: '#64748B', accent: '#CBD5E1', background: '#F8FAFC', surface: '#FFFFFF', text: '#334155', textSecondary: '#6B7280', border: '#E2E8F0', isDark: false },
+  { id: 'light-gold', name: 'Gold', primary: '#CA8A04', secondary: '#EAB308', accent: '#FEF08A', background: '#FEFCE8', surface: '#FFFFFF', text: '#854D0E', textSecondary: '#6B7280', border: '#FEF9C3', isDark: false },
+  { id: 'light-bronze', name: 'Bronze', primary: '#B45309', secondary: '#D97706', accent: '#FED7AA', background: '#FFFBEB', surface: '#FFFFFF', text: '#92400E', textSecondary: '#6B7280', border: '#FFEDD5', isDark: false },
+  { id: 'light-sage', name: 'Sage', primary: '#4D7C0F', secondary: '#65A30D', accent: '#BEF264', background: '#F7FEE7', surface: '#FFFFFF', text: '#365314', textSecondary: '#6B7280', border: '#D9F99D', isDark: false },
+  { id: 'light-berry', name: 'Berry', primary: '#BE185D', secondary: '#DB2777', accent: '#F9A8D4', background: '#FDF2F8', surface: '#FFFFFF', text: '#9D174D', textSecondary: '#6B7280', border: '#FBCFE8', isDark: false },
+  { id: 'light-steel', name: 'Steel', primary: '#4B5563', secondary: '#6B7280', accent: '#D1D5DB', background: '#F9FAFB', surface: '#FFFFFF', text: '#374151', textSecondary: '#6B7280', border: '#E5E7EB', isDark: false },
+  { id: 'light-peach', name: 'Peach', primary: '#EA580C', secondary: '#F97316', accent: '#FDBA74', background: '#FFF7ED', surface: '#FFFFFF', text: '#C2410C', textSecondary: '#6B7280', border: '#FED7AA', isDark: false },
+  
+  // Dark themes
+  { id: 'dark-default', name: 'Dark Default', primary: '#0A84FF', secondary: '#5E5CE6', accent: '#FF9F0A', background: '#000000', surface: '#1C1C1E', text: '#FFFFFF', textSecondary: '#8E8E93', border: '#38383A', isDark: true },
+  { id: 'dark-midnight', name: 'Midnight', primary: '#60A5FA', secondary: '#818CF8', accent: '#FBBF24', background: '#0F172A', surface: '#1E293B', text: '#F8FAFC', textSecondary: '#94A3B8', border: '#334155', isDark: true },
+  { id: 'dark-ocean', name: 'Dark Ocean', primary: '#22D3EE', secondary: '#06B6D4', accent: '#0891B2', background: '#0C1929', surface: '#0F2942', text: '#E0F2FE', textSecondary: '#7DD3FC', border: '#164E63', isDark: true },
+  { id: 'dark-forest', name: 'Dark Forest', primary: '#4ADE80', secondary: '#22C55E', accent: '#16A34A', background: '#052E16', surface: '#14532D', text: '#DCFCE7', textSecondary: '#86EFAC', border: '#166534', isDark: true },
+  { id: 'dark-sunset', name: 'Dark Sunset', primary: '#FB923C', secondary: '#F97316', accent: '#EA580C', background: '#1C1917', surface: '#292524', text: '#FED7AA', textSecondary: '#FDBA74', border: '#44403C', isDark: true },
+  { id: 'dark-purple', name: 'Dark Purple', primary: '#A78BFA', secondary: '#8B5CF6', accent: '#7C3AED', background: '#1E1B4B', surface: '#312E81', text: '#EDE9FE', textSecondary: '#C4B5FD', border: '#4338CA', isDark: true },
+  { id: 'dark-rose', name: 'Dark Rose', primary: '#FB7185', secondary: '#F43F5E', accent: '#E11D48', background: '#1C1917', surface: '#27272A', text: '#FFE4E6', textSecondary: '#FDA4AF', border: '#3F3F46', isDark: true },
+  { id: 'dark-emerald', name: 'Dark Emerald', primary: '#34D399', secondary: '#10B981', accent: '#059669', background: '#022C22', surface: '#064E3B', text: '#D1FAE5', textSecondary: '#6EE7B7', border: '#065F46', isDark: true },
+  { id: 'dark-amber', name: 'Dark Amber', primary: '#FBBF24', secondary: '#F59E0B', accent: '#D97706', background: '#1C1917', surface: '#292524', text: '#FEF3C7', textSecondary: '#FCD34D', border: '#44403C', isDark: true },
+  { id: 'dark-cyan', name: 'Dark Cyan', primary: '#22D3EE', secondary: '#06B6D4', accent: '#0891B2', background: '#083344', surface: '#164E63', text: '#CFFAFE', textSecondary: '#67E8F9', border: '#155E75', isDark: true },
+  { id: 'dark-pink', name: 'Dark Pink', primary: '#F472B6', secondary: '#EC4899', accent: '#DB2777', background: '#1F1218', surface: '#2D1A24', text: '#FCE7F3', textSecondary: '#F9A8D4', border: '#500724', isDark: true },
+  { id: 'dark-indigo', name: 'Dark Indigo', primary: '#818CF8', secondary: '#6366F1', accent: '#4F46E5', background: '#1E1B4B', surface: '#312E81', text: '#E0E7FF', textSecondary: '#A5B4FC', border: '#3730A3', isDark: true },
+  { id: 'dark-teal', name: 'Dark Teal', primary: '#2DD4BF', secondary: '#14B8A6', accent: '#0D9488', background: '#042F2E', surface: '#134E4A', text: '#CCFBF1', textSecondary: '#5EEAD4', border: '#115E59', isDark: true },
+  { id: 'dark-lime', name: 'Dark Lime', primary: '#A3E635', secondary: '#84CC16', accent: '#65A30D', background: '#1A1D12', surface: '#1F2718', text: '#ECFCCB', textSecondary: '#BEF264', border: '#3F6212', isDark: true },
+  { id: 'dark-fuchsia', name: 'Dark Fuchsia', primary: '#E879F9', secondary: '#D946EF', accent: '#C026D3', background: '#1A0A1E', surface: '#2E1534', text: '#FAE8FF', textSecondary: '#F0ABFC', border: '#701A75', isDark: true },
+  { id: 'dark-slate', name: 'Dark Slate', primary: '#94A3B8', secondary: '#64748B', accent: '#475569', background: '#0F172A', surface: '#1E293B', text: '#F1F5F9', textSecondary: '#CBD5E1', border: '#334155', isDark: true },
+  { id: 'dark-coral', name: 'Dark Coral', primary: '#F87171', secondary: '#EF4444', accent: '#DC2626', background: '#1C1917', surface: '#292524', text: '#FEE2E2', textSecondary: '#FCA5A5', border: '#44403C', isDark: true },
+  { id: 'dark-gold', name: 'Dark Gold', primary: '#FACC15', secondary: '#EAB308', accent: '#CA8A04', background: '#1C1917', surface: '#292524', text: '#FEF9C3', textSecondary: '#FDE047', border: '#44403C', isDark: true },
+  { id: 'dark-violet', name: 'Dark Violet', primary: '#A78BFA', secondary: '#8B5CF6', accent: '#7C3AED', background: '#0C0A1D', surface: '#1A1625', text: '#EDE9FE', textSecondary: '#C4B5FD', border: '#2E2649', isDark: true },
+  { id: 'dark-sky', name: 'Dark Sky', primary: '#38BDF8', secondary: '#0EA5E9', accent: '#0284C7', background: '#0C1929', surface: '#0F2942', text: '#E0F2FE', textSecondary: '#7DD3FC', border: '#075985', isDark: true },
+  { id: 'dark-bronze', name: 'Dark Bronze', primary: '#F59E0B', secondary: '#D97706', accent: '#B45309', background: '#1C1917', surface: '#292524', text: '#FFEDD5', textSecondary: '#FBBF24', border: '#44403C', isDark: true },
+  { id: 'dark-sage', name: 'Dark Sage', primary: '#84CC16', secondary: '#65A30D', accent: '#4D7C0F', background: '#111712', surface: '#1A231A', text: '#ECFCCB', textSecondary: '#A3E635', border: '#365314', isDark: true },
+  { id: 'dark-berry', name: 'Dark Berry', primary: '#F472B6', secondary: '#DB2777', accent: '#BE185D', background: '#1A0A12', surface: '#27141C', text: '#FCE7F3', textSecondary: '#F9A8D4', border: '#4A1D2F', isDark: true },
+  { id: 'dark-steel', name: 'Dark Steel', primary: '#9CA3AF', secondary: '#6B7280', accent: '#4B5563', background: '#111827', surface: '#1F2937', text: '#F3F4F6', textSecondary: '#D1D5DB', border: '#374151', isDark: true },
+  { id: 'dark-abyss', name: 'Abyss', primary: '#60A5FA', secondary: '#3B82F6', accent: '#2563EB', background: '#030712', surface: '#111827', text: '#F9FAFB', textSecondary: '#9CA3AF', border: '#1F2937', isDark: true },
+];
 
 interface EmailState {
   accounts: Account[];
@@ -56,15 +129,16 @@ interface EmailState {
   selectedEmailId: string | null;
   selectedEmailIds: string[];
   isSelectionMode: boolean;
-  viewMode: 'smart' | 'folders';
+  viewMode: 'all' | 'account' | 'folder';
   searchQuery: string;
+  currentThemeId: string;
   
   // Actions
   setSelectedAccount: (id: string | null) => void;
   setSelectedFolder: (id: string) => void;
   setSelectedCategory: (id: string) => void;
   setSelectedEmail: (id: string | null) => void;
-  setViewMode: (mode: 'smart' | 'folders') => void;
+  setViewMode: (mode: 'all' | 'account' | 'folder') => void;
   setSearchQuery: (query: string) => void;
   toggleEmailRead: (id: string) => void;
   toggleEmailFlag: (id: string) => void;
@@ -72,7 +146,11 @@ interface EmailState {
   deleteEmail: (id: string) => void;
   sendEmail: (email: Partial<Email>) => void;
   addAccount: (account: Omit<Account, 'id'>) => void;
+  toggleAccountEnabled: (id: string) => void;
+  toggleFolderVisible: (id: string) => void;
+  setTheme: (themeId: string) => void;
   getFilteredEmails: () => Email[];
+  getCurrentTheme: () => ColorTheme;
   
   // Selection actions
   toggleSelectionMode: () => void;
@@ -94,6 +172,7 @@ const demoAccounts: Account[] = [
     provider: 'gmail',
     isPrimary: true,
     color: '#4285F4',
+    isEnabled: true,
   },
   {
     id: 'a2',
@@ -102,6 +181,7 @@ const demoAccounts: Account[] = [
     provider: 'imap',
     isPrimary: false,
     color: '#FF6B00',
+    isEnabled: true,
   },
   {
     id: 'a3',
@@ -110,24 +190,23 @@ const demoAccounts: Account[] = [
     provider: 'outlook',
     isPrimary: false,
     color: '#0078D4',
+    isEnabled: true,
   },
 ];
 
 const demoFolders: Folder[] = [
-  { id: 'inbox', name: 'Inbox', icon: 'mail', isSystem: true, count: 24 },
-  { id: 'sent', name: 'Sent', icon: 'send', isSystem: true },
-  { id: 'drafts', name: 'Drafts', icon: 'document-text', isSystem: true, count: 3 },
-  { id: 'archive', name: 'Archive', icon: 'archive', isSystem: true },
-  { id: 'trash', name: 'Trash', icon: 'trash', isSystem: true },
-  { id: 'spam', name: 'Spam', icon: 'warning', isSystem: true, count: 5 },
+  { id: 'inbox', name: 'Inbox', icon: 'mail', isSystem: true, isVisible: true, count: 24 },
+  { id: 'sent', name: 'Sent', icon: 'send', isSystem: true, isVisible: true },
+  { id: 'drafts', name: 'Drafts', icon: 'document-text', isSystem: true, isVisible: true, count: 3 },
+  { id: 'archive', name: 'Archive', icon: 'archive', isSystem: true, isVisible: false },
+  { id: 'trash', name: 'Trash', icon: 'trash', isSystem: true, isVisible: true },
+  { id: 'spam', name: 'Spam', icon: 'warning', isSystem: true, isVisible: false, count: 5 },
 ];
 
 const smartCategories: SmartCategory[] = [
-  { id: 'primary', name: 'Primary', icon: 'person', color: '#007AFF' },
-  { id: 'priority', name: 'Priority', icon: 'star', color: '#FF9500' },
-  { id: 'news', name: 'News', icon: 'newspaper', color: '#34C759' },
-  { id: 'promos', name: 'Promos', icon: 'pricetag', color: '#AF52DE' },
-  { id: 'social', name: 'Social', icon: 'people', color: '#FF2D55' },
+  { id: 'all', name: 'All Mail', icon: 'mail', color: '#007AFF' },
+  { id: 'unread', name: 'Unread', icon: 'mail-unread', color: '#FF3B30' },
+  { id: 'flagged', name: 'Flagged', icon: 'flag', color: '#FF9500' },
 ];
 
 // Generate demo emails
@@ -280,19 +359,39 @@ export const useEmailStore = create<EmailState>((set, get) => ({
   smartCategories: smartCategories,
   selectedAccountId: null,
   selectedFolderId: 'inbox',
-  selectedCategoryId: 'primary',
+  selectedCategoryId: 'all',
   selectedEmailId: null,
   selectedEmailIds: [],
   isSelectionMode: false,
-  viewMode: 'smart',
+  viewMode: 'all',
   searchQuery: '',
+  currentThemeId: 'light-default',
 
-  setSelectedAccount: (id) => set({ selectedAccountId: id }),
+  setSelectedAccount: (id) => set({ selectedAccountId: id, selectedEmailIds: [], isSelectionMode: false }),
   setSelectedFolder: (id) => set({ selectedFolderId: id, selectedEmailIds: [], isSelectionMode: false }),
   setSelectedCategory: (id) => set({ selectedCategoryId: id, selectedEmailIds: [], isSelectionMode: false }),
   setSelectedEmail: (id) => set({ selectedEmailId: id }),
   setViewMode: (mode) => set({ viewMode: mode, selectedEmailIds: [], isSelectionMode: false }),
   setSearchQuery: (query) => set({ searchQuery: query }),
+  
+  setTheme: (themeId) => set({ currentThemeId: themeId }),
+  
+  getCurrentTheme: () => {
+    const state = get();
+    return colorThemes.find(t => t.id === state.currentThemeId) || colorThemes[0];
+  },
+
+  toggleAccountEnabled: (id) => set((state) => ({
+    accounts: state.accounts.map((a) =>
+      a.id === id ? { ...a, isEnabled: !a.isEnabled } : a
+    ),
+  })),
+
+  toggleFolderVisible: (id) => set((state) => ({
+    folders: state.folders.map((f) =>
+      f.id === id ? { ...f, isVisible: !f.isVisible } : f
+    ),
+  })),
 
   toggleEmailRead: (id) => set((state) => ({
     emails: state.emails.map((e) =>
@@ -340,7 +439,7 @@ export const useEmailStore = create<EmailState>((set, get) => ({
   }),
 
   addAccount: (account) => set((state) => ({
-    accounts: [...state.accounts, { ...account, id: `a${Date.now()}` }],
+    accounts: [...state.accounts, { ...account, id: `a${Date.now()}`, isEnabled: true }],
   })),
 
   // Selection actions
@@ -396,14 +495,26 @@ export const useEmailStore = create<EmailState>((set, get) => ({
 
   getFilteredEmails: () => {
     const state = get();
-    let filtered = state.emails.filter((e) => e.folderId === state.selectedFolderId);
+    const enabledAccountIds = state.accounts.filter(a => a.isEnabled).map(a => a.id);
+    
+    // Start with all emails from enabled accounts in the selected folder
+    let filtered = state.emails.filter(
+      (e) => e.folderId === state.selectedFolderId && enabledAccountIds.includes(e.accountId)
+    );
 
-    if (state.viewMode === 'smart') {
-      filtered = filtered.filter((e) => e.category === state.selectedCategoryId);
-    } else if (state.selectedAccountId) {
+    // Filter by account if specific account is selected
+    if (state.viewMode === 'account' && state.selectedAccountId) {
       filtered = filtered.filter((e) => e.accountId === state.selectedAccountId);
     }
 
+    // Apply category filter
+    if (state.selectedCategoryId === 'unread') {
+      filtered = filtered.filter((e) => !e.isRead);
+    } else if (state.selectedCategoryId === 'flagged') {
+      filtered = filtered.filter((e) => e.isFlagged);
+    }
+
+    // Apply search filter
     if (state.searchQuery.trim()) {
       const query = state.searchQuery.toLowerCase();
       filtered = filtered.filter(
