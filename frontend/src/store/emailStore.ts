@@ -70,6 +70,8 @@ export interface WorkEmailSettings {
 export interface AppSettings {
   workEmail: WorkEmailSettings;
   expandedSections: string[];
+  aiEnabled: boolean;
+  aiTone: string;
 }
 
 // 50 Color themes (25 light + 25 dark)
@@ -402,6 +404,8 @@ export const useEmailStore = create<EmailState>((set, get) => ({
       signature: 'Best regards,\nJohn Doe\nSenior Manager',
     },
     expandedSections: [],
+    aiEnabled: true,
+    aiTone: 'professional',
   },
 
   setSelectedAccount: (id) => set({ selectedAccountId: id, selectedEmailIds: [], isSelectionMode: false }),

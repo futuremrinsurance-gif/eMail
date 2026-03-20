@@ -239,6 +239,32 @@ export default function SettingsScreen() {
           />
         </CollapsibleSection>
 
+        {/* AI Settings */}
+        <CollapsibleSection title="AI Writing Assistant" sectionId="ai" theme={theme}>
+          <View style={dynamicStyles.aiInfoRow}>
+            <Ionicons name="sparkles" size={24} color={theme.primary} />
+            <Text style={dynamicStyles.aiInfoText}>
+              AI-powered email writing is available in the compose screen. Toggle it on/off per email.
+            </Text>
+          </View>
+          <View style={dynamicStyles.aiFeatureRow}>
+            <Ionicons name="create-outline" size={20} color={theme.textSecondary} />
+            <Text style={dynamicStyles.aiFeatureText}>Generate emails from prompts</Text>
+          </View>
+          <View style={dynamicStyles.aiFeatureRow}>
+            <Ionicons name="color-wand-outline" size={20} color={theme.textSecondary} />
+            <Text style={dynamicStyles.aiFeatureText}>Improve existing drafts</Text>
+          </View>
+          <View style={dynamicStyles.aiFeatureRow}>
+            <Ionicons name="text-outline" size={20} color={theme.textSecondary} />
+            <Text style={dynamicStyles.aiFeatureText}>Generate subject lines</Text>
+          </View>
+          <View style={[dynamicStyles.aiFeatureRow, { borderBottomWidth: 0 }]}>
+            <Ionicons name="happy-outline" size={20} color={theme.textSecondary} />
+            <Text style={dynamicStyles.aiFeatureText}>Multiple tone options</Text>
+          </View>
+        </CollapsibleSection>
+
         {/* About Section */}
         <CollapsibleSection title="About" sectionId="about" theme={theme}>
           <View style={dynamicStyles.aboutRow}>
@@ -494,5 +520,29 @@ const createStyles = (theme: any) => StyleSheet.create({
   aboutValue: {
     fontSize: 15,
     color: theme.textSecondary,
+  },
+  aiInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 16,
+  },
+  aiInfoText: {
+    flex: 1,
+    fontSize: 14,
+    color: theme.textSecondary,
+    lineHeight: 20,
+  },
+  aiFeatureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border,
+    gap: 12,
+  },
+  aiFeatureText: {
+    fontSize: 15,
+    color: theme.text,
   },
 });
