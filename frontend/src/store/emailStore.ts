@@ -54,6 +54,8 @@ interface EmailState {
   selectedFolderId: string;
   selectedCategoryId: string;
   selectedEmailId: string | null;
+  selectedEmailIds: string[];
+  isSelectionMode: boolean;
   viewMode: 'smart' | 'folders';
   searchQuery: string;
   
@@ -71,6 +73,16 @@ interface EmailState {
   sendEmail: (email: Partial<Email>) => void;
   addAccount: (account: Omit<Account, 'id'>) => void;
   getFilteredEmails: () => Email[];
+  
+  // Selection actions
+  toggleSelectionMode: () => void;
+  toggleEmailSelection: (id: string) => void;
+  selectAllEmails: () => void;
+  deselectAllEmails: () => void;
+  markSelectedAsRead: () => void;
+  markSelectedAsUnread: () => void;
+  deleteSelectedEmails: () => void;
+  flagSelectedEmails: () => void;
 }
 
 // Demo accounts including custom domain
@@ -270,14 +282,16 @@ export const useEmailStore = create<EmailState>((set, get) => ({
   selectedFolderId: 'inbox',
   selectedCategoryId: 'primary',
   selectedEmailId: null,
+  selectedEmailIds: [],
+  isSelectionMode: false,
   viewMode: 'smart',
   searchQuery: '',
 
   setSelectedAccount: (id) => set({ selectedAccountId: id }),
-  setSelectedFolder: (id) => set({ selectedFolderId: id }),
-  setSelectedCategory: (id) => set({ selectedCategoryId: id }),
+  setSelectedFolder: (id) => set({ selectedFolderId: id, selectedEmailIds: [], isSelectionMode: false }),
+  setSelectedCategory: (id) => set({ selectedCategoryId: id, selectedEmailIds: [], isSelectionMode: false }),
   setSelectedEmail: (id) => set({ selectedEmailId: id }),
-  setViewMode: (mode) => set({ viewMode: mode }),
+  setViewMode: (mode) => set({ viewMode: mode, selectedEmailIds: [], isSelectionMode: false }),
   setSearchQuery: (query) => set({ searchQuery: query }),
 
   toggleEmailRead: (id) => set((state) => ({
@@ -327,6 +341,57 @@ export const useEmailStore = create<EmailState>((set, get) => ({
 
   addAccount: (account) => set((state) => ({
     accounts: [...state.accounts, { ...account, id: `a${Date.now()}` }],
+  })),
+
+  // Selection actions
+  toggleSelectionMode: () => set((state) => ({
+    isSelectionMode: !state.isSelectionMode,
+    selectedEmailIds: state.isSelectionMode ? [] : state.selectedEmailIds,
+  })),
+
+  toggleEmailSelection: (id) => set((state) => ({
+    selectedEmailIds: state.selectedEmailIds.includes(id)
+      ? state.selectedEmailIds.filter((eid) => eid !== id)
+      : [...state.selectedEmailIds, id],
+  })),
+
+  selectAllEmails: () => {
+    const filtered = get().getFilteredEmails();
+    set({ selectedEmailIds: filtered.map((e) => e.id), isSelectionMode: true });
+  },
+
+  deselectAllEmails: () => set({ selectedEmailIds: [] }),
+
+  markSelectedAsRead: () => set((state) => ({
+    emails: state.emails.map((e) =>
+      state.selectedEmailIds.includes(e.id) ? { ...e, isRead: true } : e
+    ),
+    selectedEmailIds: [],
+    isSelectionMode: false,
+  })),
+
+  markSelectedAsUnread: () => set((state) => ({
+    emails: state.emails.map((e) =>
+      state.selectedEmailIds.includes(e.id) ? { ...e, isRead: false } : e
+    ),
+    selectedEmailIds: [],
+    isSelectionMode: false,
+  })),
+
+  deleteSelectedEmails: () => set((state) => ({
+    emails: state.emails.map((e) =>
+      state.selectedEmailIds.includes(e.id) ? { ...e, folderId: 'trash' } : e
+    ),
+    selectedEmailIds: [],
+    isSelectionMode: false,
+  })),
+
+  flagSelectedEmails: () => set((state) => ({
+    emails: state.emails.map((e) =>
+      state.selectedEmailIds.includes(e.id) ? { ...e, isFlagged: true } : e
+    ),
+    selectedEmailIds: [],
+    isSelectionMode: false,
   })),
 
   getFilteredEmails: () => {
