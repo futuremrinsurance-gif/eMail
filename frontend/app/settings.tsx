@@ -6,63 +6,107 @@ import {
   StyleSheet,
   ScrollView,
   FlatList,
-  useColorScheme,
+  TextInput,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useEmailStore, colorThemes, ColorTheme } from '../src/store/emailStore';
 
+interface CollapsibleSectionProps {
+  title: string;
+  sectionId: string;
+  children: React.ReactNode;
+  theme: any;
+}
+
+function CollapsibleSection({ title, sectionId, children, theme }: CollapsibleSectionProps) {
+  const { appSettings, toggleSection } = useEmailStore();
+  const isExpanded = appSettings.expandedSections.includes(sectionId);
+
+  return (
+    <View style={[styles.section, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+      <TouchableOpacity
+        style={styles.sectionHeader}
+        onPress={() => toggleSection(sectionId)}
+      >
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>{title}</Text>
+        <Ionicons
+          name={isExpanded ? 'chevron-up' : 'chevron-down'}
+          size={20}
+          color={theme.textSecondary}
+        />
+      </TouchableOpacity>
+      {isExpanded && <View style={styles.sectionContent}>{children}</View>}
+    </View>
+  );
+}
+
 export default function SettingsScreen() {
   const router = useRouter();
-  const { getCurrentTheme, setTheme, currentThemeId } = useEmailStore();
-  const systemColorScheme = useColorScheme();
+  const {
+    getCurrentTheme,
+    setTheme,
+    currentThemeId,
+    appSettings,
+    addDefaultSubject,
+    removeDefaultSubject,
+    updateWorkEmailSettings,
+  } = useEmailStore();
+
   const theme = getCurrentTheme();
   const [showDark, setShowDark] = useState(theme.isDark);
-
-  const styles = createStyles(theme);
+  const [newSubject, setNewSubject] = useState('');
 
   const lightThemes = colorThemes.filter((t) => !t.isDark);
   const darkThemes = colorThemes.filter((t) => t.isDark);
   const displayedThemes = showDark ? darkThemes : lightThemes;
+
+  const handleAddSubject = () => {
+    if (newSubject.trim()) {
+      addDefaultSubject(newSubject.trim());
+      setNewSubject('');
+    }
+  };
+
+  const handleRemoveSubject = (index: number) => {
+    Alert.alert('Remove Subject', 'Are you sure you want to remove this default subject?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => removeDefaultSubject(index) },
+    ]);
+  };
 
   const renderThemeItem = ({ item }: { item: ColorTheme }) => {
     const isSelected = currentThemeId === item.id;
     return (
       <TouchableOpacity
         style={[
-          styles.themeItem,
+          createStyles(theme).themeItem,
           isSelected && { borderColor: item.primary, borderWidth: 3 },
         ]}
         onPress={() => setTheme(item.id)}
       >
-        <View style={[styles.themePreview, { backgroundColor: item.background }]}>
-          <View style={[styles.themeHeader, { backgroundColor: item.surface }]}>
-            <View style={[styles.themeCircle, { backgroundColor: item.primary }]} />
-            <View style={[styles.themeLine, { backgroundColor: item.text, opacity: 0.3 }]} />
+        <View style={[createStyles(theme).themePreview, { backgroundColor: item.background }]}>
+          <View style={[createStyles(theme).themeHeader, { backgroundColor: item.surface }]}>
+            <View style={[createStyles(theme).themeCircle, { backgroundColor: item.primary }]} />
+            <View style={[createStyles(theme).themeLine, { backgroundColor: item.text, opacity: 0.3 }]} />
           </View>
-          <View style={styles.themeBody}>
-            <View style={[styles.themeRow, { backgroundColor: item.surface }]}>
-              <View style={[styles.themeSmallCircle, { backgroundColor: item.primary }]} />
+          <View style={createStyles(theme).themeBody}>
+            <View style={[createStyles(theme).themeRow, { backgroundColor: item.surface }]}>
+              <View style={[createStyles(theme).themeSmallCircle, { backgroundColor: item.primary }]} />
               <View style={{ flex: 1 }}>
-                <View style={[styles.themeSmallLine, { backgroundColor: item.text, opacity: 0.6 }]} />
-                <View style={[styles.themeSmallLine, { backgroundColor: item.textSecondary, width: '60%' }]} />
-              </View>
-            </View>
-            <View style={[styles.themeRow, { backgroundColor: item.surface }]}>
-              <View style={[styles.themeSmallCircle, { backgroundColor: item.accent }]} />
-              <View style={{ flex: 1 }}>
-                <View style={[styles.themeSmallLine, { backgroundColor: item.text, opacity: 0.6 }]} />
-                <View style={[styles.themeSmallLine, { backgroundColor: item.textSecondary, width: '70%' }]} />
+                <View style={[createStyles(theme).themeSmallLine, { backgroundColor: item.text, opacity: 0.6 }]} />
+                <View style={[createStyles(theme).themeSmallLine, { backgroundColor: item.textSecondary, width: '60%' }]} />
               </View>
             </View>
           </View>
         </View>
-        <Text style={[styles.themeName, isSelected && { color: item.primary, fontWeight: '700' }]}>
+        <Text style={[createStyles(theme).themeName, isSelected && { color: item.primary, fontWeight: '700' }]}>
           {item.name}
         </Text>
         {isSelected && (
-          <View style={[styles.checkmark, { backgroundColor: item.primary }]}>
+          <View style={[createStyles(theme).checkmark, { backgroundColor: item.primary }]}>
             <Ionicons name="checkmark" size={14} color="#fff" />
           </View>
         )}
@@ -70,28 +114,28 @@ export default function SettingsScreen() {
     );
   };
 
+  const dynamicStyles = createStyles(theme);
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={dynamicStyles.container} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+      <View style={dynamicStyles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={dynamicStyles.backBtn}>
           <Ionicons name="chevron-back" size={28} color={theme.primary} />
         </TouchableOpacity>
-        <Text style={styles.title}>Settings</Text>
-        <View style={styles.placeholder} />
+        <Text style={dynamicStyles.title}>Settings</Text>
+        <View style={dynamicStyles.placeholder} />
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Theme Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>APPEARANCE</Text>
-          
+      <ScrollView style={dynamicStyles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Appearance Section */}
+        <CollapsibleSection title="Appearance" sectionId="appearance" theme={theme}>
           {/* Light/Dark Toggle */}
-          <View style={styles.toggleContainer}>
+          <View style={dynamicStyles.toggleContainer}>
             <TouchableOpacity
               style={[
-                styles.toggleBtn,
-                !showDark && styles.toggleBtnActive,
+                dynamicStyles.toggleBtn,
+                !showDark && dynamicStyles.toggleBtnActive,
               ]}
               onPress={() => setShowDark(false)}
             >
@@ -102,8 +146,8 @@ export default function SettingsScreen() {
               />
               <Text
                 style={[
-                  styles.toggleText,
-                  !showDark && styles.toggleTextActive,
+                  dynamicStyles.toggleText,
+                  !showDark && dynamicStyles.toggleTextActive,
                 ]}
               >
                 Light
@@ -111,8 +155,8 @@ export default function SettingsScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={[
-                styles.toggleBtn,
-                showDark && styles.toggleBtnActive,
+                dynamicStyles.toggleBtn,
+                showDark && dynamicStyles.toggleBtnActive,
               ]}
               onPress={() => setShowDark(true)}
             >
@@ -123,8 +167,8 @@ export default function SettingsScreen() {
               />
               <Text
                 style={[
-                  styles.toggleText,
-                  showDark && styles.toggleTextActive,
+                  dynamicStyles.toggleText,
+                  showDark && dynamicStyles.toggleTextActive,
                 ]}
               >
                 Dark
@@ -132,40 +176,114 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.themeCount}>
-            {displayedThemes.length} {showDark ? 'dark' : 'light'} themes available
+          <Text style={dynamicStyles.themeCount}>
+            {displayedThemes.length} {showDark ? 'dark' : 'light'} themes
           </Text>
-        </View>
 
-        {/* Theme Grid */}
-        <FlatList
-          data={displayedThemes}
-          renderItem={renderThemeItem}
-          keyExtractor={(item) => item.id}
-          numColumns={3}
-          scrollEnabled={false}
-          contentContainerStyle={styles.themeGrid}
-          columnWrapperStyle={styles.themeRow2}
-        />
+          {/* Theme Grid */}
+          <FlatList
+            data={displayedThemes}
+            renderItem={renderThemeItem}
+            keyExtractor={(item) => item.id}
+            numColumns={3}
+            scrollEnabled={false}
+            contentContainerStyle={dynamicStyles.themeGrid}
+            columnWrapperStyle={dynamicStyles.themeRow2}
+          />
+        </CollapsibleSection>
+
+        {/* Work Email Settings */}
+        <CollapsibleSection title="Work Email" sectionId="workEmail" theme={theme}>
+          <Text style={dynamicStyles.settingLabel}>Default Subject Lines</Text>
+          <Text style={dynamicStyles.settingHint}>
+            Quick compose options for work emails
+          </Text>
+          
+          {appSettings.workEmail.defaultSubjects.map((subject, index) => (
+            <View key={index} style={dynamicStyles.subjectItem}>
+              <Text style={dynamicStyles.subjectText}>{subject}</Text>
+              <TouchableOpacity onPress={() => handleRemoveSubject(index)}>
+                <Ionicons name="close-circle" size={22} color="#FF3B30" />
+              </TouchableOpacity>
+            </View>
+          ))}
+          
+          <View style={dynamicStyles.addSubjectRow}>
+            <TextInput
+              style={dynamicStyles.addSubjectInput}
+              value={newSubject}
+              onChangeText={setNewSubject}
+              placeholder="Add new subject..."
+              placeholderTextColor={theme.textSecondary}
+              onSubmitEditing={handleAddSubject}
+            />
+            <TouchableOpacity
+              style={[dynamicStyles.addBtn, { backgroundColor: theme.primary }]}
+              onPress={handleAddSubject}
+            >
+              <Ionicons name="add" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </CollapsibleSection>
+
+        {/* Signature Settings */}
+        <CollapsibleSection title="Email Signature" sectionId="signature" theme={theme}>
+          <TextInput
+            style={dynamicStyles.signatureInput}
+            value={appSettings.workEmail.signature}
+            onChangeText={(text) => updateWorkEmailSettings({ signature: text })}
+            placeholder="Your signature..."
+            placeholderTextColor={theme.textSecondary}
+            multiline
+            numberOfLines={4}
+          />
+        </CollapsibleSection>
 
         {/* About Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>ABOUT</Text>
-          <View style={styles.aboutCard}>
-            <View style={styles.aboutRow}>
-              <Text style={styles.aboutLabel}>Version</Text>
-              <Text style={styles.aboutValue}>1.0.0</Text>
-            </View>
-            <View style={styles.aboutRow}>
-              <Text style={styles.aboutLabel}>Total Themes</Text>
-              <Text style={styles.aboutValue}>50</Text>
-            </View>
+        <CollapsibleSection title="About" sectionId="about" theme={theme}>
+          <View style={dynamicStyles.aboutRow}>
+            <Text style={dynamicStyles.aboutLabel}>Version</Text>
+            <Text style={dynamicStyles.aboutValue}>1.0.0</Text>
           </View>
-        </View>
+          <View style={dynamicStyles.aboutRow}>
+            <Text style={dynamicStyles.aboutLabel}>Total Themes</Text>
+            <Text style={dynamicStyles.aboutValue}>50</Text>
+          </View>
+          <View style={dynamicStyles.aboutRow}>
+            <Text style={dynamicStyles.aboutLabel}>Auto-save</Text>
+            <Text style={[dynamicStyles.aboutValue, { color: '#34C759' }]}>Enabled</Text>
+          </View>
+        </CollapsibleSection>
+
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  section: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  sectionContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+});
 
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
@@ -197,17 +315,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  section: {
-    marginTop: 24,
-    paddingHorizontal: 16,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: theme.textSecondary,
-    marginBottom: 12,
-    letterSpacing: 0.5,
-  },
   toggleContainer: {
     flexDirection: 'row',
     backgroundColor: theme.border,
@@ -238,106 +345,154 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 14,
     color: theme.textSecondary,
     marginTop: 12,
+    marginBottom: 8,
     textAlign: 'center',
   },
   themeGrid: {
-    paddingHorizontal: 12,
-    paddingTop: 16,
+    paddingTop: 8,
   },
   themeRow2: {
     justifyContent: 'flex-start',
     gap: 8,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   themeItem: {
     width: '31%',
-    borderRadius: 12,
+    borderRadius: 8,
     overflow: 'hidden',
-    backgroundColor: theme.surface,
+    backgroundColor: theme.background,
     borderWidth: 1,
     borderColor: theme.border,
   },
   themePreview: {
-    height: 80,
-    padding: 6,
+    height: 60,
+    padding: 4,
   },
   themeHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 4,
-    borderRadius: 4,
-    marginBottom: 4,
+    padding: 3,
+    borderRadius: 3,
+    marginBottom: 3,
   },
   themeCircle: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 4,
   },
   themeLine: {
-    height: 6,
+    height: 4,
     flex: 1,
-    borderRadius: 3,
+    borderRadius: 2,
   },
   themeBody: {
     flex: 1,
-    gap: 3,
+    gap: 2,
   },
   themeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 4,
-    borderRadius: 4,
-    gap: 6,
+    padding: 3,
+    borderRadius: 3,
+    gap: 4,
   },
   themeSmallCircle: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   themeSmallLine: {
-    height: 4,
-    borderRadius: 2,
-    marginBottom: 2,
+    height: 3,
+    borderRadius: 1.5,
+    marginBottom: 1,
   },
   themeName: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '500',
     color: theme.text,
     textAlign: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 4,
+    paddingVertical: 4,
   },
   checkmark: {
     position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    top: 4,
+    right: 4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  aboutCard: {
-    backgroundColor: theme.surface,
-    borderRadius: 12,
-    overflow: 'hidden',
+  settingLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: theme.text,
+    marginBottom: 4,
+  },
+  settingHint: {
+    fontSize: 13,
+    color: theme.textSecondary,
+    marginBottom: 12,
+  },
+  subjectItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border,
+  },
+  subjectText: {
+    fontSize: 15,
+    color: theme.text,
+    flex: 1,
+  },
+  addSubjectRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    gap: 8,
+  },
+  addSubjectInput: {
+    flex: 1,
+    backgroundColor: theme.background,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: theme.text,
+  },
+  addBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  signatureInput: {
+    backgroundColor: theme.background,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+    color: theme.text,
+    minHeight: 100,
+    textAlignVertical: 'top',
   },
   aboutRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: theme.border,
   },
   aboutLabel: {
-    fontSize: 16,
+    fontSize: 15,
     color: theme.text,
   },
   aboutValue: {
-    fontSize: 16,
+    fontSize: 15,
     color: theme.textSecondary,
   },
 });

@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
+import { Platform, View } from 'react-native';
 import { useEmailStore } from '../src/store/emailStore';
 
 export default function RootLayout() {
@@ -18,9 +19,16 @@ export default function RootLayout() {
           tabBarStyle: {
             backgroundColor: theme.surface,
             borderTopColor: theme.border,
+            height: Platform.OS === 'ios' ? 95 : 70,
+            paddingBottom: Platform.OS === 'ios' ? 34 : 10,
+            paddingTop: 10,
           },
           tabBarActiveTintColor: theme.primary,
           tabBarInactiveTintColor: theme.textSecondary,
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '500',
+          },
         }}
       >
         <Tabs.Screen
@@ -42,11 +50,11 @@ export default function RootLayout() {
           }}
         />
         <Tabs.Screen
-          name="compose"
+          name="work"
           options={{
-            title: 'Compose',
+            title: 'Work',
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="create" size={size} color={color} />
+              <Ionicons name="briefcase" size={size} color={color} />
             ),
           }}
         />
@@ -57,6 +65,26 @@ export default function RootLayout() {
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="settings" size={size} color={color} />
             ),
+          }}
+        />
+        <Tabs.Screen
+          name="compose"
+          options={{
+            title: 'Compose',
+            tabBarIcon: ({ color, size }) => (
+              <View style={{
+                backgroundColor: theme.primary,
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 4,
+              }}>
+                <Ionicons name="mail-outline" size={24} color="#fff" />
+              </View>
+            ),
+            tabBarLabel: () => null,
           }}
         />
         <Tabs.Screen

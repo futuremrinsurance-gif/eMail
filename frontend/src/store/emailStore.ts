@@ -61,6 +61,17 @@ export interface ColorTheme {
   isDark: boolean;
 }
 
+export interface WorkEmailSettings {
+  defaultSubjects: string[];
+  quickReplies: string[];
+  signature: string;
+}
+
+export interface AppSettings {
+  workEmail: WorkEmailSettings;
+  expandedSections: string[];
+}
+
 // 50 Color themes (25 light + 25 dark)
 export const colorThemes: ColorTheme[] = [
   // Light themes
@@ -132,6 +143,7 @@ interface EmailState {
   viewMode: 'all' | 'account' | 'folder';
   searchQuery: string;
   currentThemeId: string;
+  appSettings: AppSettings;
   
   // Actions
   setSelectedAccount: (id: string | null) => void;
@@ -150,7 +162,14 @@ interface EmailState {
   toggleFolderVisible: (id: string) => void;
   setTheme: (themeId: string) => void;
   getFilteredEmails: () => Email[];
+  getWorkEmails: () => Email[];
   getCurrentTheme: () => ColorTheme;
+  
+  // Settings actions
+  toggleSection: (sectionId: string) => void;
+  updateWorkEmailSettings: (settings: Partial<WorkEmailSettings>) => void;
+  addDefaultSubject: (subject: string) => void;
+  removeDefaultSubject: (index: number) => void;
   
   // Selection actions
   toggleSelectionMode: () => void;
@@ -366,6 +385,24 @@ export const useEmailStore = create<EmailState>((set, get) => ({
   viewMode: 'all',
   searchQuery: '',
   currentThemeId: 'light-default',
+  appSettings: {
+    workEmail: {
+      defaultSubjects: [
+        'Weekly Status Update',
+        'Meeting Follow-up',
+        'Project Update',
+        'Quick Question',
+        'Action Required',
+      ],
+      quickReplies: [
+        'Thanks for the update!',
+        'I\'ll look into this.',
+        'Let\'s schedule a call.',
+      ],
+      signature: 'Best regards,\nJohn Doe\nSenior Manager',
+    },
+    expandedSections: [],
+  },
 
   setSelectedAccount: (id) => set({ selectedAccountId: id, selectedEmailIds: [], isSelectionMode: false }),
   setSelectedFolder: (id) => set({ selectedFolderId: id, selectedEmailIds: [], isSelectionMode: false }),
@@ -379,6 +416,51 @@ export const useEmailStore = create<EmailState>((set, get) => ({
   getCurrentTheme: () => {
     const state = get();
     return colorThemes.find(t => t.id === state.currentThemeId) || colorThemes[0];
+  },
+
+  // Settings actions
+  toggleSection: (sectionId) => set((state) => ({
+    appSettings: {
+      ...state.appSettings,
+      expandedSections: state.appSettings.expandedSections.includes(sectionId)
+        ? state.appSettings.expandedSections.filter(s => s !== sectionId)
+        : [...state.appSettings.expandedSections, sectionId],
+    },
+  })),
+
+  updateWorkEmailSettings: (settings) => set((state) => ({
+    appSettings: {
+      ...state.appSettings,
+      workEmail: { ...state.appSettings.workEmail, ...settings },
+    },
+  })),
+
+  addDefaultSubject: (subject) => set((state) => ({
+    appSettings: {
+      ...state.appSettings,
+      workEmail: {
+        ...state.appSettings.workEmail,
+        defaultSubjects: [...state.appSettings.workEmail.defaultSubjects, subject],
+      },
+    },
+  })),
+
+  removeDefaultSubject: (index) => set((state) => ({
+    appSettings: {
+      ...state.appSettings,
+      workEmail: {
+        ...state.appSettings.workEmail,
+        defaultSubjects: state.appSettings.workEmail.defaultSubjects.filter((_, i) => i !== index),
+      },
+    },
+  })),
+
+  getWorkEmails: () => {
+    const state = get();
+    // Work account is 'a3' (john.doe@outlook.com)
+    return state.emails
+      .filter((e) => e.accountId === 'a3' && e.folderId === 'inbox')
+      .sort((a, b) => b.timestamp - a.timestamp);
   },
 
   toggleAccountEnabled: (id) => set((state) => ({
