@@ -11,6 +11,13 @@ export interface Account {
   isPrimary: boolean;
   color: string;
   isEnabled: boolean;
+  signature: string;
+}
+
+export interface Label {
+  id: string;
+  name: string;
+  color: string;
 }
 
 export interface Email {
@@ -29,6 +36,7 @@ export interface Email {
   isRead: boolean;
   isFlagged: boolean;
   hasAttachments: boolean;
+  labels: string[];
 }
 
 export interface Folder {
@@ -64,7 +72,21 @@ export interface ColorTheme {
 export interface WorkEmailSettings {
   defaultSubjects: string[];
   quickReplies: string[];
-  signature: string;
+}
+
+export interface NotificationSettings {
+  enabled: boolean;
+  sound: boolean;
+  badge: boolean;
+  preview: boolean;
+}
+
+export interface SearchFilter {
+  hasAttachment: boolean;
+  isUnread: boolean;
+  isFlagged: boolean;
+  dateRange: 'all' | 'today' | 'week' | 'month';
+  labels: string[];
 }
 
 export interface AppSettings {
@@ -72,6 +94,8 @@ export interface AppSettings {
   expandedSections: string[];
   aiEnabled: boolean;
   aiTone: string;
+  notifications: NotificationSettings;
+  labels: Label[];
 }
 
 // 50 Color themes (25 light + 25 dark)
@@ -187,11 +211,36 @@ interface EmailState {
   // Single email actions
   archiveEmail: (id: string) => void;
   
+  // Label actions
+  addLabel: (label: Omit<Label, 'id'>) => void;
+  removeLabel: (labelId: string) => void;
+  addLabelToEmail: (emailId: string, labelId: string) => void;
+  removeLabelFromEmail: (emailId: string, labelId: string) => void;
+  addLabelToSelected: (labelId: string) => void;
+  
+  // Account signature
+  updateAccountSignature: (accountId: string, signature: string) => void;
+  
+  // Search with filters
+  searchWithFilters: (query: string, filters: Partial<SearchFilter>) => Email[];
+  
+  // Notification settings
+  updateNotificationSettings: (settings: Partial<NotificationSettings>) => void;
+  
   // Conversation/Thread helpers
   getConversations: () => { threadId: string; subject: string; emails: Email[]; latestDate: string; }[];
 }
 
-// Demo accounts including custom domain
+// Default labels
+const defaultLabels: Label[] = [
+  { id: 'l1', name: 'Important', color: '#FF3B30' },
+  { id: 'l2', name: 'Work', color: '#007AFF' },
+  { id: 'l3', name: 'Personal', color: '#34C759' },
+  { id: 'l4', name: 'Finance', color: '#FF9500' },
+  { id: 'l5', name: 'Travel', color: '#AF52DE' },
+];
+
+// Demo accounts including custom domain with signatures
 const demoAccounts: Account[] = [
   {
     id: 'a1',
@@ -201,6 +250,7 @@ const demoAccounts: Account[] = [
     isPrimary: true,
     color: '#4285F4',
     isEnabled: true,
+    signature: 'Best regards,\nJohn Doe\n\nSent from my iPhone',
   },
   {
     id: 'a2',
@@ -210,6 +260,7 @@ const demoAccounts: Account[] = [
     isPrimary: false,
     color: '#FF6B00',
     isEnabled: true,
+    signature: 'Robert D. Karsky\nSenior Insurance Agent\nFarmers Insurance Agency\nPhone: (555) 123-4567\nwww.farmersagency.com',
   },
   {
     id: 'a3',
@@ -219,6 +270,7 @@ const demoAccounts: Account[] = [
     isPrimary: false,
     color: '#0078D4',
     isEnabled: true,
+    signature: 'John Doe\nSenior Manager | Product Division\nAcme Corporation\njohn.doe@outlook.com | (555) 987-6543',
   },
 ];
 
@@ -257,6 +309,7 @@ const generateDemoEmails = (): Email[] => {
       isRead: false,
       isFlagged: true,
       hasAttachments: true,
+      labels: ['l1', 'l4'],
     },
     {
       id: 'e2',
@@ -274,6 +327,7 @@ const generateDemoEmails = (): Email[] => {
       isRead: true,
       isFlagged: false,
       hasAttachments: false,
+      labels: ['l2'],
     },
     {
       id: 'e3',
@@ -291,6 +345,7 @@ const generateDemoEmails = (): Email[] => {
       isRead: false,
       isFlagged: false,
       hasAttachments: false,
+      labels: ['l2'],
     },
     {
       id: 'e4',
@@ -308,6 +363,7 @@ const generateDemoEmails = (): Email[] => {
       isRead: true,
       isFlagged: false,
       hasAttachments: false,
+      labels: [],
     },
     {
       id: 'e5',
@@ -325,6 +381,7 @@ const generateDemoEmails = (): Email[] => {
       isRead: false,
       isFlagged: true,
       hasAttachments: true,
+      labels: ['l1', 'l2'],
     },
     {
       id: 'e6',
@@ -342,6 +399,7 @@ const generateDemoEmails = (): Email[] => {
       isRead: true,
       isFlagged: false,
       hasAttachments: false,
+      labels: ['l3'],
     },
     {
       id: 'e7',
@@ -359,6 +417,7 @@ const generateDemoEmails = (): Email[] => {
       isRead: true,
       isFlagged: false,
       hasAttachments: false,
+      labels: ['l2', 'l3'],
     },
     {
       id: 'e8',
@@ -376,6 +435,7 @@ const generateDemoEmails = (): Email[] => {
       isRead: true,
       isFlagged: false,
       hasAttachments: true,
+      labels: ['l2'],
     },
   ];
 };
@@ -408,8 +468,14 @@ export const useEmailStore = create<EmailState>((set, get) => ({
         'I\'ll look into this.',
         'Let\'s schedule a call.',
       ],
-      signature: 'Best regards,\nJohn Doe\nSenior Manager',
     },
+    notifications: {
+      enabled: true,
+      sound: true,
+      badge: true,
+      preview: true,
+    },
+    labels: defaultLabels,
     expandedSections: [],
     aiEnabled: true,
     aiTone: 'professional',
